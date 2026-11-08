@@ -23,4 +23,13 @@ function download(name,content,type){const url=URL.createObjectURL(new Blob([con
 function csv(rows,cols){return [cols.join(','),...rows.map(r=>cols.map(c=>'"'+String(r[c]??'').replace(/"/g,'""')+'"').join(','))].join('\r\n')}
 $('exportReports').onclick=()=>download('gas-price-reports.csv',csv(data.reports,['id','stationId','fuel','price','observed','note','created']),'text/csv');$('exportRequests').onclick=()=>download('station-requests.csv',csv(data.requests,['id','town','name','address','notes','created']),'text/csv');$('backup').onclick=()=>download('alberta-gas-tracker-backup.json',JSON.stringify({version:2,...data},null,2),'application/json');$('importBtn').onclick=()=>$('importFile').click();$('importFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const x=JSON.parse(await file.text());if(!Array.isArray(x.reports)||!Array.isArray(x.requests))throw Error('Invalid backup');if(!confirm('Replace reports and requests on this device with the backup?'))return;data={reports:x.reports.filter(r=>r&&stations.some(s=>s.id===r.stationId)&&['regular','premium','diesel'].includes(r.fuel)&&Number.isFinite(Number(r.price))&&Number(r.price)>0&&Number(r.price)<=500&&Number.isFinite(Date.parse(r.observed))),requests:x.requests.filter(r=>r&&typeof r.name==='string'&&typeof r.address==='string')};if(!save())return;$('importStatus').textContent='✓ Backup imported.';renderStations();renderHistory();renderRequests()}catch(err){$('importStatus').textContent='Could not import: invalid JSON backup.'}e.target.value=''});
 renderSelect();renderStations();renderRequests();renderHistory();
-</script></body></html>
+</script><
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .catch(error => console.log('Service worker:', error));
+  });
+}
+</script>
+</body></html>
